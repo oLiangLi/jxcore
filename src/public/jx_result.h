@@ -6,11 +6,22 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#ifdef _WIN32
-#define JXCORE_EXTERN(x) __declspec(dllexport) x
-#else
-#define JXCORE_EXTERN(x) x
-#endif
+#define  __WINDLL_EXPORT__		__declspec(dllexport)
+
+/**
+ * Ugly, 
+ */
+#undef JXCORE_EXTERN
+
+#if   !defined(JXCORE_EXTERN) && defined(_MSC_VER)
+#define JXCORE_EXTERN(x)	__WINDLL_EXPORT__ x
+#elif !defined(JXCORE_EXTERN) && ( defined(__MINGW32__) || defined(__CYGWIN__))
+#define JXCORE_EXTERN(x)	__attribute__((visibility ("default"))) __WINDLL_EXPORT__ x
+#elif !defined(JXCORE_EXTERN) && defined(__GNUC__)
+#define JXCORE_EXTERN(x)	__attribute__((visibility ("default")))	x
+#elif !defined(JXCORE_EXTERN)
+#define JXCORE_EXTERN(x)	x
+#endif /* JXCORE_EXTERN */
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,13 +45,14 @@ typedef enum _JXType JXValueType;
 
 struct _JXValue {
   // internal use only
-  void *com_;
-  bool persistent_;
-  bool was_stored_;
-
-  void *data_;
+  void *com_  ;
+  void *data_ ;
   size_t size_;
-  JXValueType type_;
+
+  uint8_t persistent_;
+  uint8_t was_stored_;
+  uint8_t type_;
+  uint8_t			jx____pad___8;
 };
 
 typedef struct _JXValue JXResult;
@@ -213,6 +225,24 @@ JX_WrapObject(JXValue *object, void *ptr);
 
 JXCORE_EXTERN(void *)
 JX_UnwrapObject(JXValue *object);
+
+#ifndef _JXCORE_EXT_ABI_CHECK
+#define _JXCORE_EXT_ABI_CHECK(expr)			extern void jx___ABI_check__static_assert(int j____argv[((expr)?1:-1)])
+#endif /* _JXCORE_EXT_ABI_CHECK */
+
+#if    !defined(_JXCORE_OFFSETOF) && defined(__GNUC__)
+#define _JXCORE_OFFSETOF(s,m)				__builtin_offsetof (s, m)
+#elif  !defined(_JXCORE_OFFSETOF)
+#define _JXCORE_OFFSETOF(s,m)				((uintptr_t)&(((s *)0)->m))
+#endif /* _JXCORE_OFFSETOF */
+
+_JXCORE_EXT_ABI_CHECK(sizeof(JXValue) == 4 * sizeof(void*));
+_JXCORE_EXT_ABI_CHECK(0 * sizeof(void*) + 0 == _JXCORE_OFFSETOF(JXValue, com_));
+_JXCORE_EXT_ABI_CHECK(1 * sizeof(void*) + 0 == _JXCORE_OFFSETOF(JXValue, data_));
+_JXCORE_EXT_ABI_CHECK(2 * sizeof(void*) + 0 == _JXCORE_OFFSETOF(JXValue, size_));
+_JXCORE_EXT_ABI_CHECK(3 * sizeof(void*) + 0 == _JXCORE_OFFSETOF(JXValue, persistent_));
+_JXCORE_EXT_ABI_CHECK(3 * sizeof(void*) + 1 == _JXCORE_OFFSETOF(JXValue, was_stored_));
+_JXCORE_EXT_ABI_CHECK(3 * sizeof(void*) + 2 == _JXCORE_OFFSETOF(JXValue, type_));
 
 #ifdef __cplusplus
 }

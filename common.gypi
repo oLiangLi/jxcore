@@ -245,9 +245,9 @@
       }],
       [ 'OS=="android"', {
         'defines': ['_GLIBCXX_USE_C99_MATH'],
-        'libraries': [ '-llog' ],
+        'libraries': [ '-llog -ldl -lsupc++ -lstdc++ -lgnustl_static -lm -lc -lgcc' ],
       }],
-      [ 'OS=="android" and node_static_library==0', {
+      [ 'OS=="android" and node_static_library==0 and node_shared_library==0', {
         'cflags': [ '-pie -fPIE' ],
         'ldflags': [ '-pie -fPIE' ],
       }],

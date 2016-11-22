@@ -381,7 +381,7 @@ JX_StoreValue(JXValue *value) {
 JXCORE_EXTERN(JXValueType)
 JX_GetStoredValueType(const int threadId, const long id) {
   if (stored_values[threadId].find(id) != stored_values[threadId].end()) {
-    return stored_values[threadId][id]->type_;
+    return (JXValueType)stored_values[threadId][id]->type_;
   } else {
     // id doesn't exist. better crash here
     assert(0 &&
@@ -413,4 +413,69 @@ JX_RemoveStoredValue(const int threadId, const long id) {
 
   // for compiler's sake
   return 0;
+}
+
+JXCORE_EXTERN(void*)
+_JXext_MemoryAlloc(size_t n)
+{
+	return malloc(n);
+}
+
+JXCORE_EXTERN(void*)
+_JXext_MemoryRealloc(void* p, size_t n)
+{
+	return realloc(p, n);
+}
+
+JXCORE_EXTERN(void)
+_JXext_MemoryFree(void* p)
+{
+	return free(p);
+}
+
+JXCORE_EXTERN(void)
+_JXext_InitializeJxOnce(const char *home_folder, const char* jx_entry)
+{
+	JXEngine::DefineGlobals();
+#if defined(__IOS__) || defined(__ANDROID__) || defined(DEBUG)
+	warn_console("Initializing JXcore engine\n");
+#endif
+
+	size_t home_length = strlen(home_folder);
+	size_t entry_length = strlen(jx_entry);
+	argv = (char *)malloc((12 + entry_length + home_length) * sizeof(char));
+	memcpy(argv, home_folder, home_length * sizeof(char));
+	if (home_length && home_folder[home_length - 1] != '/' &&
+		home_folder[home_length - 1] != '\\') {
+		memcpy(argv + home_length, "/jx\0main.js", 11 * sizeof(char));
+		argv[home_length + 11] = '\0';
+		app_args[1] = argv + home_length + 4;
+	}
+	else {
+		memcpy(argv + home_length, "jx\0main.js", 10 * sizeof(char));
+		argv[home_length + 10] = '\0';
+		app_args[1] = argv + home_length + 3;
+	}
+
+	memcpy(app_args[1], jx_entry, entry_length + 1);	/**/
+	app_args[0] = argv;
+
+#if defined(__IOS__) || defined(__ANDROID__) || defined(DEBUG)
+	warn_console("JXcore engine is ready\n");
+#endif
+}
+
+JXCORE_EXTERN(void)
+_JXext_DefineFileEx(const char *name, const char *content, int len, int entry)
+{
+	auto_lock locker_(CSLOCK_RUNTIME);
+	JXEngine *engine = JXEngine::ActiveInstance();
+	if (engine == NULL) {
+		warn_console(
+			"(JX_DefineMainFile) Did you initialize the JXEngine instance for this "
+			"thread?\n");
+		return;
+	}
+
+	engine->MemoryMap(name, content, len, entry != 0);
 }

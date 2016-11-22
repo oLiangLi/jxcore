@@ -66,6 +66,7 @@ ipch/
 *.sdf
 *.opensdf
 
+/*.VC.db
 /config.mk
 /config.gypi
 *-nodegyp*

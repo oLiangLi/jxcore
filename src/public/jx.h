@@ -11,6 +11,21 @@ extern "C" {
 
 typedef void (*JX_CALLBACK)(JXValue *result, int argc);
 
+JXCORE_EXTERN(void*)
+_JXext_MemoryAlloc(size_t n);
+
+JXCORE_EXTERN(void*)
+_JXext_MemoryRealloc(void* p, size_t n);
+
+JXCORE_EXTERN(void)
+_JXext_MemoryFree(void* p);
+
+JXCORE_EXTERN(void)
+_JXext_InitializeJxOnce(const char *home_folder, const char* jx_entry);
+
+JXCORE_EXTERN(void)
+_JXext_DefineFileEx(const char *name, const char *content, int len, int entry);
+
 // Call method below only once per app. to initialize JXcore
 JXCORE_EXTERN(void)
 JX_InitializeOnce(const char *home_folder);
